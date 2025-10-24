@@ -28,7 +28,7 @@ my-go-app/
 │   ├── values.yaml
 │   └── templates/
 ├── infrastructure/               # Terraform инфраструктура
-│   └── terraform/
+│   └── eks/
 │       ├── main.tf              # Основная конфигурация
 │       ├── variables.tf         # Переменные
 │       ├── outputs.tf           # Выводы
@@ -44,7 +44,7 @@ my-go-app/
 ### 1. Развертывание инфраструктуры
 
 ```bash
-cd infrastructure/terraform
+cd infrastructure/eks
 terraform init
 terraform plan
 terraform apply
@@ -151,7 +151,7 @@ GitHub Actions автоматически:
 Для удаления всех ресурсов:
 
 ```bash
-cd infrastructure/terraform
+cd infrastructure/eks
 terraform destroy
 ```
 
