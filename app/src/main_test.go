@@ -79,3 +79,4 @@ func TestMethodNotAllowed(t *testing.T) {
 			status, http.StatusMethodNotAllowed)
 	}
 }
+

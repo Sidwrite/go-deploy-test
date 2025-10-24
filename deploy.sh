@@ -82,3 +82,4 @@ echo "✅ Deployment completed successfully!"
 echo "🔗 Access the application:"
 echo "   kubectl port-forward svc/$RELEASE_NAME 8080:80 -n $NAMESPACE"
 echo "   Then visit: http://localhost:8080"
+
