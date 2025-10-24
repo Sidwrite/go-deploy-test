@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+          
+    - name: Install dependencies
+      run: |
+        cd app/src
+        go mod download
+        
+    - name: Run tests
+      run: |
+        cd app/src
+        go test -v ./...
+        
+    - name: Build application
+      run: |
+        cd app/src
+        go build -o main .
+        
+    - name: Test Docker build
+      run: |
+        cd app
+        docker build -t my-go-app .
+        
+    - name: Test Docker run
+      run: |
+        cd app
+        docker run --rm -d -p 8080:8080 --name test-container my-go-app
+        sleep 5
+        curl -f http://localhost:8080/health || exit 1
+        curl -f http://localhost:8080/ || exit 1
+        docker stop test-container
