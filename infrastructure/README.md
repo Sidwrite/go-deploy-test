@@ -12,7 +12,7 @@ infrastructure/
 │   ├── backend.tf         # S3 backend: go-app-terraform-state-211125755493
 │   ├── main.tf            # EKS кластер + ArgoCD
 │   └── modules/eks/       # EKS модуль
-└── new-project/           # New Project инфраструктура
+└── infra/                 # New Project инфраструктура
     ├── backend.tf         # S3 backend: new-project-terraform-state-211125755493
     ├── main.tf            # VPC + K3s + Database + Bastion
     └── modules/           # Terraform модули
@@ -36,7 +36,7 @@ infrastructure/
 - **S3 Bucket:** `new-project-terraform-state-211125755493`
 - **Назначение:** VPC + K3s + Database + Bastion + App Server
 - **Модули:** VPC, Security Groups, Database, K3s, Bastion, App Server
-- **Путь:** `infrastructure/new-project/`
+- **Путь:** `infrastructure/infra/`
 
 ## 🚀 **Быстрый старт:**
 
@@ -50,7 +50,7 @@ terraform apply
 
 ### **New Project:**
 ```bash
-cd infrastructure/new-project
+cd infrastructure/infra
 ./init-terraform.sh
 terraform plan
 terraform apply
@@ -75,7 +75,7 @@ terraform apply
 ## 📋 **Workflow:**
 
 ```
-1. Выбрать проект (EKS или new-project)
+1. Выбрать проект (EKS или infra)
 2. Перейти в папку проекта
 3. Инициализировать Terraform
 4. Планировать изменения

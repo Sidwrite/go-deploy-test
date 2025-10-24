@@ -1,87 +1,83 @@
 # Go Application with EKS Deployment
 
-Простой Go API с автоматическим деплоем в AWS EKS кластер через ArgoCD.
+A simple Go API with automated deployment to AWS EKS cluster via ArgoCD.
 
-## 🚀 Особенности
+## Features
 
-- **Go API** с двумя эндпоинтами: `/` и `/health`
-- **Docker контейнеризация** с multi-stage build
-- **Kubernetes деплой** через Helm charts
-- **AWS EKS кластер** с автоматической настройкой
-- **ArgoCD GitOps** для автоматического деплоя
-- **CI/CD pipeline** через GitHub Actions
-- **Мониторинг** готов к настройке (Prometheus/Grafana)
+- **Go API** with two endpoints: `/` and `/health`
+- **Docker containerization** with multi-stage build
+- **Kubernetes deployment** via Helm charts
+- **AWS EKS cluster** with automatic setup
+- **ArgoCD GitOps** for automated deployment
+- **CI/CD pipeline** via GitHub Actions
+- **Monitoring** ready for setup (Prometheus/Grafana)
 
-## 📁 Структура проекта
+## Project Structure
 
 ```
 my-go-app/
-├── app/                          # Go приложение
+├── app/                          # Go application
 │   ├── src/
-│   │   ├── main.go              # Основной код
-│   │   ├── main_test.go         # Тесты
-│   │   └── go.mod               # Go модули
-│   ├── Dockerfile               # Docker образ
-│   └── README.md                # Документация приложения
-├── helm-chart/                  # Helm chart для Kubernetes
+│   │   ├── main.go              # Main code
+│   │   ├── main_test.go         # Tests
+│   │   └── go.mod               # Go modules
+│   ├── Dockerfile               # Docker image
+│   └── README.md                # App documentation
+├── helm-chart/                  # Helm chart for Kubernetes
 │   ├── Chart.yaml
 │   ├── values.yaml
 │   └── templates/
-├── infrastructure/               # Terraform инфраструктура
-│   └── eks/
-│       ├── main.tf              # Основная конфигурация
-│       ├── variables.tf         # Переменные
-│       ├── outputs.tf           # Выводы
-│       └── modules/eks/          # EKS модуль
-├── scripts/                     # Скрипты для деплоя
-├── docs/                        # Документация
+├── infrastructure/               # Terraform infrastructure
+│   ├── EKS/                     # EKS project
+│   └── infra/                   # Infra project
+├── scripts/                     # Deployment scripts
+├── docs/                        # Documentation
 ├── .github/workflows/           # GitHub Actions CI/CD
-└── README.md                     # Этот файл
+└── README.md                    # This file
 ```
 
-## 🛠 Быстрый старт
+## Quick Start
 
-### 1. Развертывание инфраструктуры
+### 1. Deploy Infrastructure
+
+Use the Terraform pipeline:
+1. Go to **Actions** → **Terraform Infrastructure**
+2. Click **Run workflow**
+3. Select **Environment:** dev and **Action:** apply
+4. Click **Run workflow**
+
+### 2. Access ArgoCD
+
+After deployment, get ArgoCD access:
 
 ```bash
-cd infrastructure/eks
-terraform init
-terraform plan
-terraform apply
-```
-
-### 2. Доступ к ArgoCD
-
-После развертывания получите доступ к ArgoCD:
-
-```bash
-# Получить URL LoadBalancer
+# Get LoadBalancer URL
 kubectl get svc -n argocd argocd-server
 
-# Получить пароль администратора
+# Get admin password
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
 
 **ArgoCD UI:** https://[LOAD_BALANCER_URL]  
-**Логин:** `admin`  
-**Пароль:** [полученный выше]
+**Login:** `admin`  
+**Password:** [from above command]
 
-### 3. Деплой приложения
+### 3. Deploy Application
 
-1. **Добавьте Git репозиторий** в ArgoCD
-2. **Создайте Application** для автоматического деплоя
-3. **Настройте мониторинг** (опционально)
+1. **Add Git repository** to ArgoCD
+2. **Create Application** for automated deployment
+3. **Setup monitoring** (optional)
 
-## 🔧 Разработка
+## Development
 
-### Локальная разработка
+### Local Development
 
 ```bash
 cd app/src
 go run main.go
 ```
 
-### Тестирование
+### Testing
 
 ```bash
 cd app/src
@@ -96,12 +92,12 @@ docker build -t my-go-app .
 docker run -p 8080:8080 my-go-app
 ```
 
-## 📊 API Endpoints
+## API Endpoints
 
-- `GET /` - Hello World с текущим временем
+- `GET /` - Hello World with current time
 - `GET /health` - Health check
 
-### Примеры запросов
+### Example Requests
 
 ```bash
 # Hello World
@@ -111,50 +107,72 @@ curl http://localhost:8080/
 curl http://localhost:8080/health
 ```
 
-## 🏗 Инфраструктура
+## Infrastructure
 
-### AWS Ресурсы
+### AWS Resources
 
-- **EKS Cluster** - Kubernetes кластер
-- **VPC** - Виртуальная сеть
-- **Subnets** - Публичные и приватные подсети
-- **Security Groups** - Правила безопасности
-- **IAM Roles** - Роли для EKS и нод
+- **EKS Cluster** - Kubernetes cluster
+- **VPC** - Virtual network
+- **Subnets** - Public and private subnets
+- **Security Groups** - Security rules
+- **IAM Roles** - Roles for EKS and nodes
 - **ECR Repository** - Docker registry
-- **LoadBalancer** - Внешний доступ к ArgoCD
+- **LoadBalancer** - External access to ArgoCD
 
-### Стоимость (октябрь 2025)
+### Cost (October 2025)
 
-- **EKS Cluster:** ~$72/месяц (фиксированно)
-- **t3.medium Node:** ~$3/месяц (spot instances)
-- **EBS Storage:** ~$2/месяц
-- **LoadBalancer:** ~$18/месяц
-- **Total:** ~$95/месяц
+- **EKS Cluster:** ~$72/month (fixed)
+- **t3.medium Node:** ~$3/month (spot instances)
+- **EBS Storage:** ~$2/month
+- **LoadBalancer:** ~$18/month
+- **Total:** ~$95/month
 
-⚠️ **Внимание:** EKS дорогой для тестирования! Рекомендуется использовать локальные кластеры (k3s, kind, minikube) для разработки.
+⚠️ **Note:** EKS is expensive for testing! Consider using local clusters (k3s, kind, minikube) for development.
 
-## 🔄 CI/CD
+## CI/CD
 
-GitHub Actions автоматически:
-1. **Тестирует** код при пуше в main
-2. **Собирает** Docker образ
-3. **Проверяет** работоспособность
+### Application CI/CD
+GitHub Actions automatically:
+1. **Tests** code on push to main
+2. **Builds** Docker image
+3. **Checks** functionality
+4. **Deploys** to ECR
 
-## 📚 Документация
+### Infrastructure CI/CD
+Terraform pipelines:
+1. **Plan** infrastructure changes
+2. **Apply** changes to EKS and Infra projects
+3. **Manage** state files in S3
+4. **Support** manual runs for critical operations
+5. **Safely destroy** infrastructure with confirmations
 
-- [EKS Deployment Guide](docs/EKS_DEPLOYMENT.md)
-- [ECR Setup](docs/ECR_SETUP.md)
-- [Terraform State Bucket](docs/TERRAFORM_STATE_BUCKET.md)
+## Documentation
 
-## 🧹 Очистка
+- [Terraform Pipelines](docs/TERRAFORM_PIPELINES.md) - How to use Terraform pipelines
+- [EKS Deployment](docs/EKS_DEPLOYMENT.md) - Deploy to EKS cluster
+- [ECR Setup](docs/ECR_SETUP.md) - ECR configuration
+- [Helm ECR Deployment](docs/HELM_ECR_DEPLOYMENT.md) - Helm with ECR
 
-Для удаления всех ресурсов:
+## Cleanup
 
+### Automatic Cleanup (Recommended)
+1. Go to **Actions** → **Terraform Destroy Infrastructure**
+2. Click **Run workflow**
+3. Fill in parameters and confirm destruction
+
+### Manual Cleanup
 ```bash
-cd infrastructure/eks
+# EKS project
+cd infrastructure/EKS
+terraform destroy
+
+# Infra project
+cd infrastructure/infra
 terraform destroy
 ```
 
-## 📝 Лицензия
+⚠️ **Warning:** Destruction is irreversible! All data will be lost.
+
+## License
 
 MIT License

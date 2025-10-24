@@ -1,0 +1,175 @@
+name: Terraform Destroy Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to destroy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - staging
+        - prod
+      confirm_destroy:
+        description: 'Type "DESTROY" to confirm'
+        required: true
+        type: string
+      destroy_eks:
+        description: 'Destroy EKS infrastructure'
+        required: true
+        default: true
+        type: boolean
+      destroy_infra:
+        description: 'Destroy Infra infrastructure'
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  terraform-destroy:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm_destroy == 'DESTROY'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-2
+        
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.6.0
+        
+    - name: Pre-destroy checks
+      run: |
+        echo "🔍 Pre-destroy checks..."
+        echo "Environment: ${{ github.event.inputs.environment }}"
+        echo "Destroy EKS: ${{ github.event.inputs.destroy_eks }}"
+        echo "Destroy Infra: ${{ github.event.inputs.destroy_infra }}"
+        echo "Confirmation: ${{ github.event.inputs.confirm_destroy }}"
+        
+    - name: List AWS resources before destroy
+      run: |
+        echo "📋 Current AWS resources:"
+        echo "EKS Clusters:"
+        aws eks list-clusters --region us-east-2 || echo "No EKS clusters found"
+        echo "EC2 Instances:"
+        aws ec2 describe-instances --region us-east-2 --query 'Reservations[*].Instances[*].[InstanceId,State.Name,InstanceType]' --output table || echo "No EC2 instances found"
+        echo "S3 Buckets:"
+        aws s3 ls | grep terraform-state || echo "No terraform state buckets found"
+        
+    - name: Terraform Destroy - EKS
+      if: github.event.inputs.destroy_eks == 'true'
+      run: |
+        echo "🗑️ Destroying EKS infrastructure..."
+        cd infrastructure/EKS
+        terraform init
+        terraform destroy -auto-approve
+        echo "✅ EKS infrastructure destroyed"
+        
+    - name: Terraform Destroy - Infra
+      if: github.event.inputs.destroy_infra == 'true'
+      run: |
+        echo "🗑️ Destroying Infra infrastructure..."
+        cd infrastructure/infra
+        terraform init
+        terraform destroy -auto-approve
+        echo "✅ Infra infrastructure destroyed"
+        
+    - name: Post-destroy cleanup
+      run: |
+        echo "🧹 Post-destroy cleanup..."
+        echo "Checking for remaining resources..."
+        
+        # Check EKS clusters
+        if aws eks list-clusters --region us-east-2 --query 'clusters' --output text | grep -q .; then
+          echo "⚠️ Warning: EKS clusters still exist"
+          aws eks list-clusters --region us-east-2
+        else
+          echo "✅ No EKS clusters found"
+        fi
+        
+        # Check EC2 instances
+        INSTANCE_COUNT=$(aws ec2 describe-instances --region us-east-2 --query 'Reservations[*].Instances[*].[InstanceId]' --output text | wc -l)
+        if [ "$INSTANCE_COUNT" -gt 0 ]; then
+          echo "⚠️ Warning: EC2 instances still exist"
+          aws ec2 describe-instances --region us-east-2 --query 'Reservations[*].Instances[*].[InstanceId,State.Name]' --output table
+        else
+          echo "✅ No EC2 instances found"
+        fi
+        
+    - name: Verify S3 state buckets
+      run: |
+        echo "📋 Checking S3 state buckets..."
+        echo "Go App bucket:"
+        aws s3 ls s3://go-app-terraform-state-211125755493/ || echo "Bucket not found or empty"
+        echo "New Project bucket:"
+        aws s3 ls s3://new-project-terraform-state-211125755493/ || echo "Bucket not found or empty"
+        
+    - name: Destroy summary
+      run: |
+        echo "📊 Destroy Summary:"
+        echo "Environment: ${{ github.event.inputs.environment }}"
+        echo "EKS Destroyed: ${{ github.event.inputs.destroy_eks }}"
+        echo "Infra Destroyed: ${{ github.event.inputs.destroy_infra }}"
+        echo "Timestamp: $(date)"
+        echo "✅ Destroy process completed"
+        
+    - name: Create destroy report
+      run: |
+        cat > destroy-report.md << EOF
+        # Infrastructure Destroy Report
+        
+        **Date:** $(date)
+        **Environment:** ${{ github.event.inputs.environment }}
+        **EKS Destroyed:** ${{ github.event.inputs.destroy_eks }}
+        **Infra Destroyed:** ${{ github.event.inputs.destroy_infra }}
+        
+        ## Resources Destroyed
+        
+        ### EKS Project
+        - EKS Cluster
+        - VPC and Subnets
+        - Security Groups
+        - IAM Roles
+        - LoadBalancer (if any)
+        
+        ### Infra Project
+        - VPC and Subnets
+        - K3s Cluster
+        - Database
+        - Bastion Host
+        - App Server
+        - Security Groups
+        
+        ## State Files
+        
+        State files remain in S3 buckets:
+        - \`go-app-terraform-state-211125755493\`
+        - \`new-project-terraform-state-211125755493\`
+        
+        ## Next Steps
+        
+        1. Verify all resources are destroyed
+        2. Clean up S3 buckets if needed
+        3. Remove any remaining AWS resources manually
+        4. Update documentation
+        
+        EOF
+        
+        echo "📄 Destroy report created"
+        cat destroy-report.md
+        
+    - name: Upload destroy report
+      uses: actions/upload-artifact@v3
+      with:
+        name: destroy-report
+        path: destroy-report.md

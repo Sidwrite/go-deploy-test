@@ -1,0 +1,185 @@
+name: Terraform Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - staging
+        - prod
+      action:
+        description: 'Terraform action'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+        - plan
+        - apply
+
+jobs:
+  terraform-plan:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.action == 'plan'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-2
+        
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.6.0
+        
+    - name: Terraform Format Check
+      run: |
+        cd infrastructure/EKS
+        terraform fmt -check
+        cd ../infra
+        terraform fmt -check
+        
+    - name: Terraform Init - EKS
+      run: |
+        cd infrastructure/EKS
+        terraform init
+        
+    - name: Terraform Init - Infra
+      run: |
+        cd infrastructure/infra
+        terraform init
+        
+    - name: Terraform Plan - EKS
+      run: |
+        cd infrastructure/EKS
+        terraform plan -out=tfplan-eks
+        
+    - name: Terraform Plan - Infra
+      run: |
+        cd infrastructure/infra
+        terraform plan -out=tfplan-infra
+        
+    - name: Upload Terraform Plans
+      uses: actions/upload-artifact@v3
+      with:
+        name: terraform-plans
+        path: |
+          infrastructure/EKS/tfplan-eks
+          infrastructure/infra/tfplan-infra
+
+  terraform-apply:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.action == 'apply'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-2
+        
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.6.0
+        
+    - name: Download Terraform Plans
+      uses: actions/download-artifact@v3
+      with:
+        name: terraform-plans
+        
+    - name: Terraform Init - EKS
+      run: |
+        cd infrastructure/EKS
+        terraform init
+        
+    - name: Terraform Apply - EKS
+      run: |
+        cd infrastructure/EKS
+        terraform apply -auto-approve tfplan-eks
+        
+    - name: Terraform Init - Infra
+      run: |
+        cd infrastructure/infra
+        terraform init
+        
+    - name: Terraform Apply - Infra
+      run: |
+        cd infrastructure/infra
+        terraform apply -auto-approve tfplan-infra
+        
+    - name: Terraform Output - EKS
+      run: |
+        cd infrastructure/EKS
+        terraform output -json > eks-outputs.json
+        echo "EKS Outputs:"
+        cat eks-outputs.json
+        
+    - name: Terraform Output - Infra
+      run: |
+        cd infrastructure/infra
+        terraform output -json > infra-outputs.json
+        echo "Infra Outputs:"
+        cat infra-outputs.json
+        
+    - name: Upload Terraform Outputs
+      uses: actions/upload-artifact@v3
+      with:
+        name: terraform-outputs
+        path: |
+          infrastructure/EKS/eks-outputs.json
+          infrastructure/infra/infra-outputs.json
+
+  terraform-destroy:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.action == 'destroy'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-2
+        
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.6.0
+        
+    - name: Terraform Init - EKS
+      run: |
+        cd infrastructure/EKS
+        terraform init
+        
+    - name: Terraform Destroy - EKS
+      run: |
+        cd infrastructure/EKS
+        terraform destroy -auto-approve
+        
+    - name: Terraform Init - Infra
+      run: |
+        cd infrastructure/infra
+        terraform init
+        
+    - name: Terraform Destroy - Infra
+      run: |
+        cd infrastructure/infra
+        terraform destroy -auto-approve
