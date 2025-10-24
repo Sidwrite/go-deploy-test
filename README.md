@@ -149,6 +149,7 @@ Single Terraform pipeline:
 
 - [Terraform Pipelines](docs/TERRAFORM_PIPELINES.md) - How to use Terraform pipelines
 - [ArgoCD App of Apps](docs/ARGOCD_APP_OF_APPS.md) - App of Apps pattern for ArgoCD
+- [ArgoCD Terraform](docs/ARGOCD_TERRAFORM.md) - Deploy ArgoCD with Terraform
 - [ArgoCD Setup](docs/ARGOCD_SETUP.md) - ArgoCD configuration and deployment
 - [EKS Deployment](docs/EKS_DEPLOYMENT.md) - Deploy to EKS cluster
 - [ECR Setup](docs/ECR_SETUP.md) - ECR configuration
