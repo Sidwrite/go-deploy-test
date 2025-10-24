@@ -139,16 +139,17 @@ GitHub Actions automatically:
 4. **Deploys** to ECR
 
 ### Infrastructure CI/CD
-Terraform pipelines:
+Single Terraform pipeline:
 1. **Plan** infrastructure changes
-2. **Apply** changes to EKS and Infra projects
-3. **Manage** state files in S3
-4. **Support** manual runs for critical operations
-5. **Safely destroy** infrastructure with confirmations
+2. **Apply** changes to selected project (EKS or infra)
+3. **Destroy** infrastructure with confirmation
+4. **Manual runs only** - full control over deployments
 
 ## Documentation
 
 - [Terraform Pipelines](docs/TERRAFORM_PIPELINES.md) - How to use Terraform pipelines
+- [ArgoCD App of Apps](docs/ARGOCD_APP_OF_APPS.md) - App of Apps pattern for ArgoCD
+- [ArgoCD Setup](docs/ARGOCD_SETUP.md) - ArgoCD configuration and deployment
 - [EKS Deployment](docs/EKS_DEPLOYMENT.md) - Deploy to EKS cluster
 - [ECR Setup](docs/ECR_SETUP.md) - ECR configuration
 - [Helm ECR Deployment](docs/HELM_ECR_DEPLOYMENT.md) - Helm with ECR
@@ -156,9 +157,13 @@ Terraform pipelines:
 ## Cleanup
 
 ### Automatic Cleanup (Recommended)
-1. Go to **Actions** → **Terraform Destroy Infrastructure**
+1. Go to **Actions** → **Terraform**
 2. Click **Run workflow**
-3. Fill in parameters and confirm destruction
+3. Select:
+   - **Project:** EKS or infra
+   - **Action:** destroy
+   - **Confirm destroy:** DESTROY
+4. Click **Run workflow**
 
 ### Manual Cleanup
 ```bash

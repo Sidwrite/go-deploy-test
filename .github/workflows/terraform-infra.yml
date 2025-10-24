@@ -1,17 +1,16 @@
-name: Terraform Infrastructure
+name: Terraform
 
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Environment to deploy'
+      project:
+        description: 'Project to manage'
         required: true
-        default: 'dev'
+        default: 'EKS'
         type: choice
         options:
-        - dev
-        - staging
-        - prod
+        - EKS
+        - infra
       action:
         description: 'Terraform action'
         required: true
@@ -20,14 +19,19 @@ on:
         options:
         - plan
         - apply
+        - destroy
+      confirm_destroy:
+        description: 'Type "DESTROY" to confirm (only for destroy action)'
+        required: false
+        type: string
 
 jobs:
-  terraform-plan:
+  terraform:
     runs-on: ubuntu-latest
-    if: github.event.inputs.action == 'plan'
+    environment: ${{ github.event.inputs.project }}
     
     steps:
-    - name: Checkout code
+    - name: Checkout
       uses: actions/checkout@v4
       
     - name: Configure AWS credentials
@@ -44,105 +48,42 @@ jobs:
         
     - name: Terraform Format Check
       run: |
-        cd infrastructure/EKS
-        terraform fmt -check
-        cd ../infra
-        terraform fmt -check
+        cd infrastructure/${{ github.event.inputs.project }}
+        terraform fmt -check -recursive
         
-    - name: Terraform Init - EKS
+    - name: Terraform Init
       run: |
-        cd infrastructure/EKS
+        cd infrastructure/${{ github.event.inputs.project }}
         terraform init
         
-    - name: Terraform Init - Infra
+    - name: Terraform Validate
       run: |
-        cd infrastructure/infra
-        terraform init
+        cd infrastructure/${{ github.event.inputs.project }}
+        terraform validate
         
-    - name: Terraform Plan - EKS
+    - name: Terraform Plan
+      if: github.event.inputs.action == 'plan'
       run: |
-        cd infrastructure/EKS
-        terraform plan -out=tfplan-eks
+        cd infrastructure/${{ github.event.inputs.project }}
+        terraform plan -out=tfplan
         
-    - name: Terraform Plan - Infra
+    - name: Terraform Apply
+      if: github.event.inputs.action == 'apply'
       run: |
-        cd infrastructure/infra
-        terraform plan -out=tfplan-infra
+        cd infrastructure/${{ github.event.inputs.project }}
+        terraform apply -auto-approve
         
-    - name: Upload Terraform Plans
-      uses: actions/upload-artifact@v3
-      with:
-        name: terraform-plans
-        path: |
-          infrastructure/EKS/tfplan-eks
-          infrastructure/infra/tfplan-infra
-
-  terraform-apply:
-    runs-on: ubuntu-latest
-    if: github.event.inputs.action == 'apply'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-2
-        
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: 1.6.0
-        
-    - name: Download Terraform Plans
-      uses: actions/download-artifact@v3
-      with:
-        name: terraform-plans
-        
-    - name: Terraform Init - EKS
+    - name: Terraform Destroy
+      if: github.event.inputs.action == 'destroy' && github.event.inputs.confirm_destroy == 'DESTROY'
       run: |
-        cd infrastructure/EKS
-        terraform init
+        cd infrastructure/${{ github.event.inputs.project }}
+        terraform destroy -auto-approve
         
-    - name: Terraform Apply - EKS
+    - name: Terraform Output
+      if: github.event.inputs.action == 'apply'
       run: |
-        cd infrastructure/EKS
-        terraform apply -auto-approve tfplan-eks
-        
-    - name: Terraform Init - Infra
-      run: |
-        cd infrastructure/infra
-        terraform init
-        
-    - name: Terraform Apply - Infra
-      run: |
-        cd infrastructure/infra
-        terraform apply -auto-approve tfplan-infra
-        
-    - name: Terraform Output - EKS
-      run: |
-        cd infrastructure/EKS
-        terraform output -json > eks-outputs.json
-        echo "EKS Outputs:"
-        cat eks-outputs.json
-        
-    - name: Terraform Output - Infra
-      run: |
-        cd infrastructure/infra
-        terraform output -json > infra-outputs.json
-        echo "Infra Outputs:"
-        cat infra-outputs.json
-        
-    - name: Upload Terraform Outputs
-      uses: actions/upload-artifact@v3
-      with:
-        name: terraform-outputs
-        path: |
-          infrastructure/EKS/eks-outputs.json
-          infrastructure/infra/infra-outputs.json
+        cd infrastructure/${{ github.event.inputs.project }}
+        terraform output
 
   terraform-destroy:
     runs-on: ubuntu-latest

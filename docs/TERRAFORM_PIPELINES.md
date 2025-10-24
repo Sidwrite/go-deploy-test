@@ -1,44 +1,26 @@
-# Terraform Pipelines
+# Terraform Pipeline
 
 ## Overview
 
-We have two Terraform pipelines for managing infrastructure:
+Single Terraform pipeline for all infrastructure operations:
 
-1. **Terraform Infrastructure** - Plan and apply infrastructure changes
-2. **Terraform Destroy** - Safely destroy infrastructure
+- **Plan** - shows what would change
+- **Apply** - creates/updates resources
+- **Destroy** - removes resources (with confirmation)
 
 ## How to Use
 
-### Plan Infrastructure Changes
+### All Operations
 
-1. Go to **Actions** → **Terraform Infrastructure**
+1. Go to **Actions** → **Terraform**
 2. Click **Run workflow**
 3. Select:
-   - **Environment:** dev/staging/prod
-   - **Action:** plan
+   - **Project:** EKS or infra
+   - **Action:** plan, apply, or destroy
+   - **Confirm destroy:** DESTROY (only for destroy action)
 4. Click **Run workflow**
 
-### Apply Infrastructure Changes
-
-1. Go to **Actions** → **Terraform Infrastructure**
-2. Click **Run workflow**
-3. Select:
-   - **Environment:** dev/staging/prod
-   - **Action:** apply
-4. Click **Run workflow**
-
-### Destroy Infrastructure
-
-1. Go to **Actions** → **Terraform Destroy Infrastructure**
-2. Click **Run workflow**
-3. Fill in:
-   - **Environment:** dev/staging/prod
-   - **Type "DESTROY" to confirm:** DESTROY
-   - **Destroy EKS infrastructure:** ✅/❌
-   - **Destroy Infra infrastructure:** ✅/❌
-4. Click **Run workflow**
-
-## What Gets Managed
+## Projects
 
 ### EKS Project
 - EKS cluster
@@ -57,14 +39,20 @@ We have two Terraform pipelines for managing infrastructure:
 
 ## Requirements
 
-Make sure these GitHub secrets are set:
+GitHub secrets required:
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
 
-## Safety Notes
+## Safety
 
-- **Plan** is safe - it only shows what would change
-- **Apply** creates/updates resources
-- **Destroy** removes everything - use with caution!
+- **Plan** - safe, shows changes only
+- **Apply** - creates/updates resources
+- **Destroy** - removes everything (requires "DESTROY" confirmation)
 
-The destroy pipeline requires typing "DESTROY" to confirm, but still be careful.
+## Benefits
+
+- **Single pipeline** - easier to manage
+- **All operations** - plan, apply, destroy in one place
+- **Project selection** - choose EKS or infra
+- **Safety confirmation** - required for destroy
+- **Best practices** - format, validate, plan, apply
