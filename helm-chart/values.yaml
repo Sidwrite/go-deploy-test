@@ -2,11 +2,12 @@
 replicaCount: 3
 
 image:
-  repository: my-go-app
+  repository: 211125755493.dkr.ecr.us-east-2.amazonaws.com/go-app
   pullPolicy: IfNotPresent
   tag: "latest"
 
-imagePullSecrets: []
+imagePullSecrets:
+  - name: ecr-secret
 nameOverride: ""
 fullnameOverride: ""
 

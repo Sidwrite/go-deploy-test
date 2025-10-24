@@ -1,9 +1,9 @@
 apiVersion: v2
 name: go-api
-description: A Helm chart for Go API application
+description: A Helm chart for Go API application with ECR integration
 type: application
-version: 0.1.0
-appVersion: "1.0.0"
+version: 0.2.0
+appVersion: "latest"
 keywords:
   - go
   - api
@@ -13,5 +13,5 @@ sources:
   - https://github.com/Sidwrite/go-deploy-test
 maintainers:
   - name: Sidwrite
-    email: sidwrite@example.com
+    email: sidwrite@gmail.com
 

@@ -1,0 +1,25 @@
+# Terraform Variables Example for Go App EKS
+# Copy this file to terraform.tfvars and update the values
+
+# AWS Configuration
+aws_region = "us-east-2"
+
+# Environment
+environment = "dev"
+
+# Cluster Configuration
+cluster_name    = "go-app-cluster"
+cluster_version = "1.34"
+
+# Network Configuration
+vpc_cidr = "10.0.0.0/16"
+public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.10.0/24", "10.0.20.0/24"]
+
+# Node Group Configuration (Spot Instances)
+node_instance_types = ["t3.medium"]  # 2 vCPU, 4GB RAM (для ArgoCD + Prometheus)
+node_capacity_type  = "SPOT"         # Spot instances for cost savings
+node_disk_size     = 20              # Для метрик Prometheus
+node_desired_size  = 1              # Minimal for testing
+node_max_size      = 2              # Allow scaling
+node_min_size      = 1              # Minimum nodes
