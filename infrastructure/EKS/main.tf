@@ -1,6 +1,7 @@
 # Go App EKS Infrastructure - Minimal Setup
 # AWS EKS Cluster with Free Tier resources
 
+
 # Configure the AWS Provider
 provider "aws" {
   region = var.aws_region
@@ -12,6 +13,27 @@ provider "aws" {
       ManagedBy   = "terraform"
     }
   }
+}
+
+# Configure Kubernetes Provider
+provider "kubernetes" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  token                  = data.aws_eks_cluster_auth.cluster.token
+}
+
+# Configure Helm Provider
+provider "helm" {
+  kubernetes {
+    host                   = module.eks.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+    token                  = data.aws_eks_cluster_auth.cluster.token
+  }
+}
+
+# Get EKS cluster authentication
+data "aws_eks_cluster_auth" "cluster" {
+  name = module.eks.cluster_name
 }
 
 # Data sources
@@ -128,4 +150,54 @@ resource "null_resource" "argocd_install" {
   triggers = {
     cluster_endpoint = module.eks.cluster_endpoint
   }
+}
+
+# Create namespace for ArgoCD applications
+resource "kubernetes_namespace" "go_app" {
+  metadata {
+    name = "go-app"
+    labels = {
+      name = "go-app"
+    }
+  }
+  depends_on = [null_resource.argocd_install]
+}
+
+# Create ECR secret for ArgoCD
+resource "kubernetes_secret" "ecr_secret" {
+  metadata {
+    name      = "ecr-secret"
+    namespace = "go-app"
+  }
+
+  type = "kubernetes.io/dockerconfigjson"
+
+  data = {
+    ".dockerconfigjson" = jsonencode({
+      auths = {
+        "${aws_ecr_repository.go_app.repository_url}" = {
+          auth = base64encode("AWS:${data.aws_ecr_authorization_token.token.password}")
+        }
+      }
+    })
+  }
+
+  depends_on = [kubernetes_namespace.go_app]
+}
+
+# Get ECR authorization token
+data "aws_ecr_authorization_token" "token" {
+  depends_on = [aws_ecr_repository.go_app]
+}
+
+# Create ArgoCD Application for App of Apps
+resource "kubernetes_manifest" "argocd_app_of_apps" {
+  manifest = yamldecode(file("${path.module}/../../argocd/app-of-apps.yaml"))
+  depends_on = [null_resource.argocd_install]
+}
+
+# Create ArgoCD Application for Go App
+resource "kubernetes_manifest" "argocd_go_app" {
+  manifest = yamldecode(file("${path.module}/../../argocd/applications/go-app.yaml"))
+  depends_on = [null_resource.argocd_install]
 }

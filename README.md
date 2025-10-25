@@ -25,9 +25,8 @@ my-go-app/
 ├── helm-chart/                  # Helm chart for Kubernetes
 │   └── my-go-app/
 ├── infrastructure/               # Terraform infrastructure
-│   ├── EKS/                     # EKS project
-│   ├── infra/                    # Infra project
-│   └── terraform/               # ArgoCD Terraform
+│   ├── EKS/                     # EKS + ArgoCD project
+│   └── infra/                    # Infra project
 ├── scripts/                     # Deployment scripts
 ├── docs/                        # Documentation
 ├── .github/workflows/           # GitHub Actions CI/CD
@@ -126,6 +125,13 @@ Single Terraform pipeline:
 2. **Apply** changes to selected project (EKS or infra)
 3. **Destroy** infrastructure with confirmation
 4. **Manual runs only** - full control over deployments
+
+**EKS Project includes:**
+- EKS cluster + VPC
+- ECR repository
+- ArgoCD installation
+- ArgoCD applications (App of Apps + Go App)
+- ECR authentication secrets
 
 ## Documentation
 
