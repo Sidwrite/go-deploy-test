@@ -11,82 +11,16 @@ resource "kubernetes_namespace" "argocd" {
   }
 }
 
-# Create ArgoCD Application for App of Apps
+# Create ArgoCD Application for App of Apps using local file
 resource "kubernetes_manifest" "argocd_app_of_apps" {
-  manifest = {
-    apiVersion = "argoproj.io/v1alpha1"
-    kind       = "Application"
-    metadata = {
-      name      = "app-of-apps"
-      namespace = "argocd"
-    }
-    spec = {
-      project = "default"
-      source = {
-        repoURL        = var.argocd_repo_url
-        targetRevision = "HEAD"
-        path           = "argocd/applications"
-      }
-      destination = {
-        server    = "https://kubernetes.default.svc"
-        namespace = "argocd"
-      }
-      syncPolicy = {
-        automated = {
-          prune    = true
-          selfHeal = true
-        }
-        syncOptions = ["CreateNamespace=true"]
-      }
-    }
-  }
+  manifest = yamldecode(file("${path.module}/../../argocd/app-of-apps.yaml"))
 
   depends_on = [kubernetes_namespace.argocd]
 }
 
-# Create ArgoCD Application for Go App
+# Create ArgoCD Application for Go App using local file
 resource "kubernetes_manifest" "argocd_go_app" {
-  manifest = {
-    apiVersion = "argoproj.io/v1alpha1"
-    kind       = "Application"
-    metadata = {
-      name      = "go-app"
-      namespace = "argocd"
-    }
-    spec = {
-      project = "default"
-      source = {
-        repoURL        = var.argocd_repo_url
-        targetRevision = "HEAD"
-        path           = "helm-chart"
-        helm = {
-          valueFiles = ["values.yaml"]
-          values = yamlencode({
-            image = {
-              repository = var.ecr_repository_url
-              tag        = "latest"
-            }
-            imagePullSecrets = [
-              {
-                name = "ecr-secret"
-              }
-            ]
-          })
-        }
-      }
-      destination = {
-        server    = "https://kubernetes.default.svc"
-        namespace = "go-app"
-      }
-      syncPolicy = {
-        automated = {
-          prune    = true
-          selfHeal = true
-        }
-        syncOptions = ["CreateNamespace=true"]
-      }
-    }
-  }
+  manifest = yamldecode(file("${path.module}/../../argocd/applications/go-app.yaml"))
 
   depends_on = [kubernetes_namespace.argocd]
 }
